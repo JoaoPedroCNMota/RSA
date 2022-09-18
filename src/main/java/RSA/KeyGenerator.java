@@ -20,7 +20,7 @@ public class KeyGenerator {
         BigInteger probablePrime = BigInteger.probablePrime(MIN_BIT_LEN, random);
 
         lowLevelPrimeTest(probablePrime.intValue());
-        highLevelPrimeTest(probablePrime.intValue());
+        millerRabin(probablePrime.intValue());
         return probablePrime;
     }
 
@@ -35,19 +35,13 @@ public class KeyGenerator {
         return true;
     }
 
-    /*Teste de primalidade de alto nível,
-     **/
-    private boolean highLevelPrimeTest(int primeCandidate){
-        return true;
-    }
-
     private List<Integer> eratosthenesSieve(int num){
         boolean[] primes = new boolean[num + 1];
         for (int i = 0; i <= num; i++) primes[i] = true;
 
         for (int i = 2; i <= Math.sqrt(num); i++){
             // verifica se 'i' é primo
-            if (primes[i] == true){
+            if (primes[i]){
                 // múltiplos de 'i' não são primos
                 for (int j = 2; i * j <= num; j++) {
                     primes[i * j] = false;
@@ -57,15 +51,35 @@ public class KeyGenerator {
 
         List<Integer> firstPrimeNumbers = new ArrayList<>();
         for (int i = 2; i <= num && i <= MAX_ERATOSTHENES_SIEVE_PRIMES; i++){
-            if (primes[i] == true) {
+            if (primes[i]) {
                 firstPrimeNumbers.add(i);
             }
         }
         return firstPrimeNumbers;
     }
 
-    private List<Integer> millerRabin(){
+    private boolean millerRabin(int prime){
+        long until = prime - 1;
 
+        while (until % 2 == 0) until /= 2;
+
+        for (int i = 0; i < MAX_RABIN_MILLER_TRIALS; i++) {
+
+            long r = Math.abs(random.nextLong());
+            long a = r % (prime - 1) + 1;
+            long temp = until;
+            long mod = (long) (Math.pow(a, temp) % prime);
+
+            while (temp != prime - 1 && mod != 1 && mod != prime - 1){
+                mod = BigInteger.valueOf(mod).multiply(BigInteger.valueOf(mod))
+                        .mod(BigInteger.valueOf(prime))
+                        .longValue();
+                temp *= 2;
+            }
+            if (mod != prime - 1 && temp % 2 == 0) return false;
+        }
+        return true;
     }
 
 }
+
