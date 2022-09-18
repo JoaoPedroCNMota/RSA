@@ -1,107 +1,56 @@
 package RSA;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 
 public class KeyGenerator {
 
-    private static final int MIN_BIT_LEN = 1024;
-    private static final int MAX_ERATOSTHENES_SIEVE_PRIMES = 100;
-    private static final int MAX_RABIN_MILLER_TRIALS = 10;
+    private static final String FILE_PATH_PUBLIC_KEY = "public_key.txt";
+    private static final String FILE_PATH_PRIVATE_KEY = "private_key.txt";
+    private static final PrimeGenerator primeGenerator = new PrimeGenerator();
 
-    private static Random random = new Random();
+    public void generateKeys(){
+        BigInteger p = primeGenerator.getRandomPrimeNumber();
+        BigInteger q = primeGenerator.getRandomPrimeNumber();
 
-    //https://acervolima.com/como-gerar-grandes-numeros-primos-para-algoritmo-rsa/
-    //https://www.geeksforgeeks.org/how-to-generate-large-prime-numbers-for-rsa-algorithm/
+        BigInteger n = p.multiply(q);
+        BigInteger phi = p.subtract(BigInteger.ONE).multiply(q.subtract(BigInteger.ONE));
 
-    public BigInteger getRandomPrimeNumber(){
-        BigInteger probablePrime = BigInteger.probablePrime(MIN_BIT_LEN, random);
-        boolean isPrime = millerRabin(probablePrime.intValue());
+        BigInteger e;
+        do{
+             e = primeGenerator.getRandomPrimeNumber();
+        }while(e.compareTo(phi) >= 0 || !Util.gcdEuclides(e, phi).equals(BigInteger.ONE));
+        BigInteger d = e.modInverse(phi);
 
-        if (isPrime)
-            System.out.println("Teste");
-        while (!isPrime){
-            probablePrime = BigInteger.probablePrime(MIN_BIT_LEN, random);
-            isPrime = millerRabin(probablePrime.intValue());
-        }
 
-        return probablePrime;
+        writeKeyInFile(n, e, FILE_PATH_PUBLIC_KEY); //geracao de chave publica
+        writeKeyInFile(n, d, FILE_PATH_PRIVATE_KEY); //geracao de chave privada
+
+        System.out.println("CHAVES CRIADAS COM SUCESSO.");
     }
 
-    /*Teste de primalidade de baixo nível,
-    * verifica se provavel primo eh divisivel por seus N primeiros primos antecessores*/
-//    private boolean lowLevelPrimeTest(BigInteger primeCandidate){
-//        List<Integer> firstPrimes = eratosthenesSieve(primeCandidate);
-//        for (Integer prime: firstPrimes) {
-//            if (primeCandidate % prime == 0 && Math.pow(prime, 2) <= primeCandidate)
-//                return false;
-//        }
-//        return true;
-//    }
-
-//    private List<Integer> eratosthenesSieve(BigInteger num){
-//        boolean[] primes = new boolean[num.intValue() + 1];
-//        for (int i = 0; i <= num.intValue(); i++) primes[i] = true;
-//
-//        for (int i = 2; i <= Math.sqrt(num.intValue()); i++){
-//            // verifica se 'i' é primo
-//            if (primes[i]){
-//                // múltiplos de 'i' não são primos
-//                for (int j = 2; i * j <= num.intValue(); j++) {
-//                    primes[i * j] = false;
-//                }
-//            }
-//        }
-//
-//        List<Integer> firstPrimeNumbers = new ArrayList<>();
-//        for (int i = 2; i <= num.intValue() && i <= MAX_ERATOSTHENES_SIEVE_PRIMES; i++){
-//            if (primes[i]) {
-//                firstPrimeNumbers.add(i);
-//            }
-//        }
-//        return firstPrimeNumbers;
-//    }
-
-    private boolean millerRabin(int prime){
-        long until = prime - 1;
-
-        while (until % 2 == 0) until /= 2;
-
-        for (int i = 0; i < MAX_RABIN_MILLER_TRIALS; i++) {
-
-            long r = Math.abs(random.nextLong());
-            long a = r % (prime - 1) + 1;
-            long temp = until;
-            long mod = modPow(a, temp, prime);
-
-            while (temp != prime - 1 && mod != 1 && mod != prime - 1){
-                mod = mulMod(mod, mod, prime);
-                temp *= 2;
-            }
-            if (mod != prime - 1 && temp % 2 == 0) return false;
+    private void writeKeyInFile(BigInteger n, BigInteger key, String path) {
+        generateFiles();
+        try{
+            PrintWriter writer = new PrintWriter(path);
+            writer.println(n);
+            writer.println(key);
+            writer.close();
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
         }
-        return true;
     }
 
-    //(a ^ b) % c
-    public long modPow(long a, long b, long c){
-        long res = 1;
-        for (int i = 0; i < b; i++){
-            res *= a;
-            res %= c;
+    private void generateFiles(){
+        try{
+            new File(FILE_PATH_PUBLIC_KEY).createNewFile();
+            new File(FILE_PATH_PRIVATE_KEY).createNewFile();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        return res % c;
-    }
-
-    //(a * b) % c
-    public long mulMod(long a, long b, long mod){
-        return BigInteger.valueOf(a)
-                .multiply(BigInteger.valueOf(b))
-                .mod(BigInteger.valueOf(mod))
-                .longValue();
     }
 
 }
-
