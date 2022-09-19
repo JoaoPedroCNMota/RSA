@@ -1,10 +1,9 @@
 package RSA;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 public class KeyGenerator {
 
@@ -30,6 +29,22 @@ public class KeyGenerator {
         writeKeyInFile(n, d, FILE_PATH_PRIVATE_KEY); //geracao de chave privada
 
         System.out.println("CHAVES CRIADAS COM SUCESSO.");
+    }
+
+    public List<String> readKeyFromFile(boolean isPublic){
+        List<String> content = new ArrayList<>();
+        File file = new File(isPublic ? FILE_PATH_PUBLIC_KEY : FILE_PATH_PRIVATE_KEY);
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(file));
+            String line = reader.readLine();
+            while(line != null){
+                content.add(line);
+                line = reader.readLine();
+            }
+            return content;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void writeKeyInFile(BigInteger n, BigInteger key, String path) {

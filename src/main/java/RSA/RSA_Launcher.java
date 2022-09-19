@@ -1,5 +1,6 @@
 package RSA;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Scanner;
 
@@ -59,8 +60,9 @@ public class RSA_Launcher {
 
             case 2:
                 while (userNavOption.equalsIgnoreCase("1")) {
-//                    System.out.println("INSIRA A MENSAGEM CIFRADA.");
-//                    String encryptedMessage = VigenereUtils.inicialFormat(scanner.nextLine().toUpperCase());
+                    System.out.println("LENDO CHAVE DOS ARQUIVOS GERADOS...");
+                    List<String> publicKeyContent = keyGenerator.readKeyFromFile(true);
+                    List<String> privateKeyContent = keyGenerator.readKeyFromFile(false);
 //
 //                    System.out.println("INSIRA A SENHA DA MENSAGEM CIFRADA.");
 //                    String messageKey = scanner.nextLine().toUpperCase();
