@@ -14,6 +14,14 @@ public class Oaep {
     MessageDigest md;
     KeyGenerator keyGenerator;
 
+    /**
+     * encrypts a byte[] with RSA-OAEP and returns a byte[]
+     * of encrypted values
+     * 
+     * @param byte[] n byte array for cipher
+     * @return byte[] ciphertext byte array of ciphered values
+     * @throws DataFormatException
+     */
     public byte[] encryptionOaep(BigInteger n, byte[] message, BigInteger e)
             throws DataFormatException, NoSuchAlgorithmException {
 
@@ -22,59 +30,73 @@ public class Oaep {
         int k = (n.bitLength() + 7) / 8;
         int mLen = message.length;
 
+        // RFC 2437 PKCS#1 v2.0
+        // https://www.rfc-editor.org/rfc/rfc2437
+
+        /*
+         * 1. If mLen greater than input => throw error Block size too large
+         */
         if (mLen > (k - 2 * this.md.getDigestLength() - 2)) {
             throw new DataFormatException("Block size too large");
         }
 
+        /*
+         * 2. Generate an octet string for padding consisting of k - mLen - 2hLen - 2
+         * zero octets. The length of the padding string may be zero.
+         */
         byte[] PS = new byte[k - mLen - 2 * this.md.getDigestLength() - 2];
 
+        /*
+         * 3. Concatenate lHash, PS, a single octet with hexadecimal value
+         * 0x01, and the message M to form a data block DB of length k -
+         * hLen - 1 octets:
+         */
         byte[] DB = Bytes.concat(this.md.digest(), PS, new byte[] { 0x01 }, message);
 
+        // 4. Generate a random octet string seed of length hLen
+        // (hLen = hash function output length in octets)
         SecureRandom rng = new SecureRandom();
         byte[] seed = new byte[this.md.getDigestLength()];
         rng.nextBytes(seed);
 
+        // 5. Let dbMask = MGF(seed, k - hLen - 1).
         MaskFunction mgf1 = new MaskFunction(this.md);
         byte[] dbMask = mgf1.generateMask(seed,
                 k - this.md.getDigestLength() - 1);
 
-        // f. Let maskedDB = DB \xor dbMask.
+        // 5.1 Xor the data block with its mask:
         byte[] maskedDB = Bytes.xor(DB, dbMask);
 
-        // g. Let seedMask = MGF(maskedDB, hLen).
+        // 5.2 Let seedMask = MGF(maskedDB, hLen).
         byte[] seedMask = mgf1.generateMask(maskedDB,
                 this.md.getDigestLength());
 
-        // h. Let maskedSeed = seed \xor seedMask.
+        // 5.3 Xor the seed with its mask
         byte[] maskedSeed = Bytes.xor(seed, seedMask);
 
         /*
-         * i. Concatenate a single octet with hexadecimal value 0x00,
-         * maskedSeed, and maskedDB to form an encoded message EM of
-         * length k octets as
-         * 
+         * 6. Concat the octet with hex value 0x00 with the seed and data block
+         * masks to generate an encoded msg
          * EM = 0x00 || maskedSeed || maskedDB.
          */
         byte[] EM = Bytes.concat(new byte[] { 0x00 }, maskedSeed, maskedDB);
 
         /*
-         * a. Convert the encoded message EM to an integer message
-         * representative m (see Section 4.2):
-         * m = OS2IP (EM).
+         * 7 converts EM to a nonnegative integer.
+         * Section 4.2 RFC 2437 (OS2IP)
          */
         BigInteger m = new BigInteger(1, EM);
 
         /*
-         * b. Apply the RSAEP encryption primitive (Section 5.1.1) to the RSA
-         * public key (n, e) and the message representative m to produce
-         * an integer ciphertext representative c:
-         * c = RSAEP ((n, e), m).
+         * 8. Apply the RSAEP encryption primitive to the RSA
+         * public key and the message m to generate the integer ciphertext c:
+         * Section 5.1.1 RSAEP RFC 2437
          */
         BigInteger c = m.modPow(e, n);
 
         /*
-         * c. Convert the ciphertext representative c to a ciphertext C of
-         * length k octets (see Section 4.1):
+         * 9. Convert the ciphertext representative c to a ciphertext of
+         * length k octets (Section 4.1 RFC 2437):
          * C = I2OSP (c, k).
          */
         byte[] ciphertext = Bytes.toFixedLenByteArray(c, k);
@@ -86,6 +108,14 @@ public class Oaep {
         return ciphertext;
     }
 
+    /**
+     * Takes a byte[] of encrypted values and uses
+     * RSAES-OAEP-DECRYPT to decrypt them
+     * 
+     * @param byte[] C Array of encrypted values
+     * @return byte[] M Array of decrypted values
+     * @throws DataFormatException
+     */
     public byte[] decryptionOaep(BigInteger n, byte[] ciphertxt, BigInteger e) throws DataFormatException {
 
         int k = (n.bitLength() + 7) / 8;
@@ -94,7 +124,7 @@ public class Oaep {
             throw new DataFormatException();
         }
 
-        // c. If k < 2hLen + 2, output "decryption error" and stop
+        // 1. If k < 2hLen + 2, output "decryption error" and stop
 
         if (k < (2 * this.md.getDigestLength() + 2)) {
             throw new DataFormatException("Decryption error");
@@ -102,15 +132,15 @@ public class Oaep {
 
         /*
          * 2. RSA decryption:
-         * a. Convert the ciphertext C to an integer ciphertext
-         * representative c (see Section 4.2):
+         * a. Convert the ciphertext c to an integer ciphertext
+         * representative c (see Section 4.2 RFC 2437):
          * 
          * c = OS2IP (C).
          */
         BigInteger c = new BigInteger(1, ciphertxt);
 
         /*
-         * b. Apply the RSADP decryption primitive (Section 5.1.2) to the
+         * b. Apply the RSADP decryption primitive (Section 5.1.2 RFC 2437) to the
          * RSA private key K and the ciphertext representative c to
          * produce an integer message representative m:
          * 
@@ -119,8 +149,8 @@ public class Oaep {
         BigInteger m = c.modPow(e, n);
 
         /*
-         * c. Convert the message representative m to an encoded message EM
-         * of length k octets (see Section 4.1):
+         * C. Convert the message representative m to an encoded message EM
+         * of length k octets (see Section 4.1 RFC 2437):
          * 
          * EM = I2OSP (m, k).
          */
@@ -180,7 +210,7 @@ public class Oaep {
             throw new DataFormatException("Decryption error");
 
         /*
-         * If there is no octet with hexadecimal value 0x01 to separate PS
+         * 4. If there is no octet with hexadecimal value 0x01 to separate PS
          * from M, if lHash does not equal lHash', or if Y is nonzero,
          * output "decryption error" and stop. (See the note below.)
          */
@@ -193,7 +223,7 @@ public class Oaep {
         if (DB[i++] != 0x01)
             throw new DataFormatException();
 
-        // 4. Output the message M.
+        // 5. Output the message M.
         int mLen = DB.length - i;
         byte[] M = new byte[mLen];
         System.arraycopy(DB, i, M, 0, mLen);
