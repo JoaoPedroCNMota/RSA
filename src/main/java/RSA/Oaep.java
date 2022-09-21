@@ -30,8 +30,8 @@ public class Oaep {
         int k = (n.bitLength() + 7) / 8;
         int mLen = message.length;
 
-        // RFC 2437 PKCS#1 v2.0
-        // https://www.rfc-editor.org/rfc/rfc2437
+        // RFC 8017 PKCS#1 v2.0
+        // https://www.rfc-editor.org/rfc/rfc8017
 
         /*
          * 1. If mLen greater than input => throw error Block size too large
@@ -83,20 +83,20 @@ public class Oaep {
 
         /*
          * 7 converts EM to a nonnegative integer.
-         * Section 4.2 RFC 2437 (OS2IP)
+         * Section 4.2 RFC 8017 (OS2IP)
          */
         BigInteger m = new BigInteger(1, EM);
 
         /*
          * 8. Apply the RSAEP encryption primitive to the RSA
          * public key and the message m to generate the integer ciphertext c:
-         * Section 5.1.1 RSAEP RFC 2437
+         * Section 5.1.1 RSAEP RFC 8017
          */
         BigInteger c = m.modPow(e, n);
 
         /*
          * 9. Convert the ciphertext representative c to a ciphertext of
-         * length k octets (Section 4.1 RFC 2437):
+         * length k octets (Section 4.1 RFC 8017):
          * C = I2OSP (c, k).
          */
         byte[] ciphertext = Bytes.toFixedLenByteArray(c, k);
@@ -133,14 +133,14 @@ public class Oaep {
         /*
          * 2. RSA decryption:
          * a. Convert the ciphertext c to an integer ciphertext
-         * representative c (see Section 4.2 RFC 2437):
+         * representative c (see Section 4.2 RFC 8017):
          * 
          * c = OS2IP (C).
          */
         BigInteger c = new BigInteger(1, ciphertxt);
 
         /*
-         * b. Apply the RSADP decryption primitive (Section 5.1.2 RFC 2437) to the
+         * b. Apply the RSADP decryption primitive (Section 5.1.2 RFC 8017) to the
          * RSA private key K and the ciphertext representative c to
          * produce an integer message representative m:
          * 
@@ -150,7 +150,7 @@ public class Oaep {
 
         /*
          * C. Convert the message representative m to an encoded message EM
-         * of length k octets (see Section 4.1 RFC 2437):
+         * of length k octets (see Section 4.1 RFC 8017):
          * 
          * EM = I2OSP (m, k).
          */
