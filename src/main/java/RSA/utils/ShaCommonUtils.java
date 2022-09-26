@@ -1,6 +1,10 @@
-package RSA.hashingUtils;
+package RSA.utils;
 
-public class shaCommonUtils {
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
+public class ShaCommonUtils {
+
     public static String bytesToHex(byte[] hash) {
         StringBuilder hexString = new StringBuilder(2 * hash.length);
         for (byte h : hash) {
@@ -10,5 +14,11 @@ public class shaCommonUtils {
             hexString.append(hex);
         }
         return hexString.toString();
+    }
+
+    public static byte[] generateHash(byte[] info) throws NoSuchAlgorithmException {
+        MessageDigest dg = MessageDigest.getInstance("SHA-256");
+        byte[] code = dg.digest(info);
+        return code;
     }
 }

@@ -5,9 +5,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.zip.DataFormatException;
-import RSA.KeyGenerator;
 
-import RSA.Utils.Bytes;
+import RSA.utils.Bytes;
 
 public class Oaep {
 

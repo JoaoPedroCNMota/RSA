@@ -63,13 +63,6 @@ public class RSA_Launcher {
                     System.out.println("LENDO CHAVE DOS ARQUIVOS GERADOS...");
                     List<String> publicKeyContent = keyGenerator.readKeyFromFile(true);
                     List<String> privateKeyContent = keyGenerator.readKeyFromFile(false);
-//
-//                    System.out.println("INSIRA A SENHA DA MENSAGEM CIFRADA.");
-//                    String messageKey = scanner.nextLine().toUpperCase();
-//
-//                    System.out.println();
-//                    System.out.println("MENSAGEM DECIFRADA: \n" + core.decrypt(encryptedMessage, messageKey));
-//                    System.out.println();
 
                     System.out.println("=====================================================================");
                     System.out.println("    [ 1 ]           - CIFRAR NOVA MENSAGEM");

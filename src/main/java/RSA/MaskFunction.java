@@ -1,11 +1,8 @@
 package RSA;
 
-import java.lang.Object;
-import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import RSA.hashingUtils.shaCommonUtils;
-import RSA.Utils.Bytes;
+
+import RSA.utils.Bytes;
 
 public class MaskFunction {
 
